@@ -1,0 +1,202 @@
+<?php
+session_start();
+if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
+    header("Location: login.php");
+    exit;
+}
+
+$error = "";
+$success = "";
+
+if (isset($_POST["upload"])) {
+    if (isset($_FILES["file"]) && $_FILES["file"]["size"] > 0) {
+        $fileType = pathinfo($_FILES["file"]["name"], PATHINFO_EXTENSION);
+        if (strtolower($fileType) !== 'csv') {
+            $error = "Only CSV files are allowed.";
+        } else {
+            require_once __DIR__ . '/config/db.php';
+            if ($conn->connect_error) die("Connection failed: " . $conn->connect_error);
+
+            $file = fopen($_FILES["file"]["tmp_name"], "r");
+            fgetcsv($file); // skip header
+
+            $inserted = 0;
+            $skipped = 0;
+            $skipped_data = [];
+
+            while (($data = fgetcsv($file, 10000, ",")) !== FALSE) {
+                $username = strtolower(trim($data[0] ?? ""));
+                $raw_password = trim($data[1] ?? "");
+                $hashed_password = password_hash($raw_password, PASSWORD_DEFAULT);
+                $internet_type = strtolower(trim($data[2] ?? ""));
+                $internet_limit_mb = trim($data[3] ?? "");
+
+                if (empty($username) || empty($raw_password) || !in_array($internet_type, ['limited', 'unlimited'])) {
+                    $skipped++;
+                    $skipped_data[] = [$username, $raw_password, $internet_type, $internet_limit_mb, 'Invalid or missing required fields'];
+                    continue;
+                }
+
+                $limit_bytes = ($internet_type === 'limited') ? (is_numeric($internet_limit_mb) ? (int)$internet_limit_mb * 1024 * 1024 : null) : null;
+
+                if ($internet_type === 'limited' && $limit_bytes === null) {
+                    $skipped++;
+                    $skipped_data[] = [$username, $raw_password, $internet_type, '', 'Missing or invalid MB value for limited type'];
+                    continue;
+                }
+
+                $check = $conn->prepare("SELECT username FROM radcheck WHERE username = ?");
+                $check->bind_param("s", $username);
+                $check->execute();
+                $check->store_result();
+
+                if ($check->num_rows == 0) {
+                    $stmt1 = $conn->prepare("INSERT INTO radcheck (username, attribute, op, value) VALUES (?, 'Cleartext-Password', ':=', ?)");
+                    $stmt1->bind_param("ss", $username, $hashed_password);
+
+                    $stmt2 = null;
+                    if ($internet_type === 'limited') {
+                        $stmt2 = $conn->prepare("INSERT INTO data_limits (username, internet_type, internet_limit) VALUES (?, ?, ?)");
+                        $stmt2->bind_param("ssi", $username, $internet_type, $limit_bytes);
+                    }
+
+                    if ($stmt1->execute() && ($stmt2 === null || $stmt2->execute())) {
+                        $inserted++;
+                    } else {
+                        $skipped++;
+                        $skipped_data[] = [$username, $raw_password, $internet_type, $internet_limit_mb, 'Database insert error'];
+                    }
+
+                    $stmt1->close();
+                    if ($stmt2) $stmt2->close();
+                } else {
+                    $skipped++;
+                    $skipped_data[] = [$username, $raw_password, $internet_type, $internet_limit_mb, 'Duplicate username'];
+                }
+                $check->close();
+            }
+
+            fclose($file);
+            $conn->close();
+
+            if ($skipped > 0) {
+                $skippedFile = fopen("skipped_users.csv", "w");
+                fputcsv($skippedFile, ['Username', 'Password', 'Internet Type', 'Internet Limit', 'Reason']);
+                foreach ($skipped_data as $row) fputcsv($skippedFile, $row);
+                fclose($skippedFile);
+            }
+
+            $success = "$inserted user(s) added successfully.";
+            if ($skipped > 0) {
+                $success .= " Skipped $skipped record(s). <a href='skipped_users.csv' download>Download Skipped Users</a>";
+            }
+        }
+    } else {
+        $error = "Please upload a valid CSV file.";
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload Users via CSV</title>
+    <link rel="icon" href="images/users_icon.PNG">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: url("images/CYNDIA.jpg");
+            background-size: cover;
+            color: #f1f1f1;
+            padding: 40px;
+        }
+        .box {
+            background: #1e1e1e;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 700px;
+            margin: auto;
+        }
+        .guideline {
+            background: #2c2c2c;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #444;
+        }
+        .guideline pre, .guideline code {
+            background-color: #1a1a1a;
+            padding: 6px 10px;
+            display: inline-block;
+            border-radius: 6px;
+            color: rgba(250, 9, 78, 0.86);
+        }
+        input[type="file"] {
+            padding: 10px;
+            border: none;
+            background: #333;
+            color: #fff;
+            margin-bottom: 15px;
+        }
+        button {
+            padding: 10px 20px;
+            background: rgba(250, 9, 78, 0.86);
+            color: white;
+            border: none;
+            font-size: 15px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: rgba(164, 4, 50, 0.86);
+        }
+        .back {
+            margin-top: 20px;
+            display: inline-block;
+            color: #ccc;
+            text-decoration: none;
+        }
+        .back:hover {
+            color: white;
+        }
+        .message {
+            margin-top: 10px;
+            color: rgba(250, 9, 78, 0.86);
+        }
+        .error {
+            margin-top: 10px;
+            color: #ff4c4c;
+        }
+    </style>
+</head>
+<body>
+<div class="box">
+    <h2>Upload Users via CSV</h2>
+
+    <div class="guideline">
+        <h3>📄 CSV Format Guidelines</h3>
+        <p>Make sure your CSV file has this format:</p>
+        <pre><code>USERNAME,PASSWORD,INTERNET_TYPE,INTERNET_LIMIT</code></pre>
+        <ul>
+            <li><strong>USERNAME</strong>: Unique username</li>
+            <li><strong>PASSWORD</strong>: Plain text (will be hashed)</li>
+            <li><strong>INTERNET_TYPE</strong>: Either <code>unlimited</code> or <code>limited</code></li>
+            <li><strong>INTERNET_LIMIT</strong>: MB value if limited, leave blank if unlimited</li>
+        </ul>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="file" accept=".csv" required><br>
+        <button type="submit" name="upload">Upload</button>
+    </form>
+
+    <?php if (!empty($success)): ?>
+        <p class="message"><?= $success ?></p>
+    <?php elseif (!empty($error)): ?>
+        <p class="error"><?= $error ?></p>
+    <?php endif; ?>
+
+    <a class="back" href="users.php">&larr; Back</a>
+</div>
+</body>
+</html>

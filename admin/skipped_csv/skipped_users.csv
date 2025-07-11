@@ -1,0 +1,2 @@
+Username,Password,"Internet Type","Internet Limit",Reason
+"&lt;a href=&quot;javascript:alert(&#039;xss&#039;)&quot;&gt;click me&lt;/a&gt;",1.23E+11,limited,10,"Invalid or dangerous input"
