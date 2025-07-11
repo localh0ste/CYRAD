@@ -125,40 +125,47 @@ All actions sync with MariaDB and FreeRADIUS.
 
 ---
 ## 🛠️ Auto Installation Guide
+### ✅ STEP 1: Connect to Your Cloud Server
 
-### Upload or Clone Project Locally
+```bash
+ssh -i ~/Downloads/cyrad.pem admin@<your-cloud-ip>
+```
+### 📦 STEP 2: Upload Project to Cloud
+ Option A: If you have a .zip file locally
 
+```bash
+scp -i ~/Downloads/cyrad.pem ~/Downloads/CYRAD-main.zip admin@<your-cloud-ip>:~
+```
+ Option B: Clone directly from GitHub
+```bash
+git clone https://github.com/localh0ste/CYRAD.git ~/CYRAD-main
+```
+### 📁 STEP 3: Deploy the Project on Cloud
 ```bash
 cd /var/www/html
 sudo rm -rf *
-sudo unzip ~/Downloads/CYRAD-main.zip -d .
+sudo unzip ~/CYRAD-main.zip -d
 # OR
-# sudo git clone https://github.com/localh0ste/CYRAD.git .
+# sudo cp -r ~/CYRAD-main/*
 ```
-
-### Set Permissions
-
+### 🔒 STEP 4: Set Permissions
 ```bash
 sudo chown -R www-data:www-data /var/www/html/
 sudo chmod -R 755 /var/www/html/
 ```
-
-### Edit DB Connection File
-
+### ⚙️ STEP 5: Configure Database Connection
 ```bash
 sudo nano /var/www/html/admin/config/db.php
 ```
-
-Ensure:
-
-```php
+For same-cloud MariaDB, use:
+```bash
 <?php
 $conn = new mysqli("localhost", "radius", "buggy", "radius");
 ?>
 ```
+   ✅ Use localhost if MySQL is on the same cloud server.
 
-### Run Setup Script (if not done earlier)
-
+### 🚀 STEP 6: Run Setup Script
 ```bash
 cd /var/www/html/admin
 chmod +x setup.sh
@@ -258,12 +265,14 @@ sudo systemctl restart freeradius
 
 ---
 
-## 🌐 Access URLs (Localhost)
+## 🌐 Access URLs
 
-| Component      | URL                                                |
-| -------------- | -------------------------------------------------- |
-| Admin Panel    | [http://localhost/admin/login.php](http://localhost/admin/login.php) |
-| Captive Portal | [http://localhost/CYRAD/login.php](http://localhost/CYRAD/lohin.php) |
+| Component       | URL                                                             |
+|----------------|------------------------------------------------------------------|
+| Admin Panel     | [http://<your_cloud_ip>/admin/login.php](http://<your-cloud-ip>/admin/login.php) |
+| Captive Portal  | [http://<your_cloud_ip>/CYRAD/login.php](http://<your-cloud-ip>/CYRAD/login.php) |
+
+
 
 ---
 
