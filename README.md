@@ -1,8 +1,8 @@
-# Cloud-Hosted Wi-Fi Captive Portal with RADIUS Authentication
+# Cloud-Hosted Wi-Fi Captive Portal with RADIUS Authentication (CYPRUS-RADIUS)
 
 A production-ready system for managing Wi-Fi access using a captive portal, authenticated via FreeRADIUS, and controlled through a web-based admin panel.
 
-Developed and maintained by **Cyndia Cyberspace LLP** to secure, monitor, and manage access in public or enterprise environments.
+Developed and maintained by **localh0ste** to secure, monitor, and manage access in public or enterprise environments.
 
 ---
 
