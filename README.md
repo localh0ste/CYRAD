@@ -2,7 +2,7 @@
 
 A production-ready system for managing Wi-Fi access using a captive portal, authenticated via FreeRADIUS, and controlled through a web-based admin panel.
 
-Developed and maintained by **localh0ste** to secure, monitor, and manage access in public or enterprise environments.
+Developed and maintained by **localh0ste** and **sh3ll** to secure, monitor, and manage access in public or enterprise environments.
 
 ---
 
