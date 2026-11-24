@@ -1,0 +1,63 @@
+<?php
+/**
+ * CYRAD central configuration — TEMPLATE.
+ *
+ * The one-command installer (install.sh / setup-cyrad.sh) generates the real
+ * config.php automatically with random secrets. You only need this file for a
+ * MANUAL install: copy it to config.php and adjust the values.
+ *
+ * Every value can also be overridden with an environment variable.
+ */
+define('CYRAD_DB_HOST', getenv('CYRAD_DB_HOST') ?: 'localhost');
+define('CYRAD_DB_USER', getenv('CYRAD_DB_USER') ?: 'radius');
+define('CYRAD_DB_PASS', getenv('CYRAD_DB_PASS') ?: 'buggy');
+define('CYRAD_DB_NAME', getenv('CYRAD_DB_NAME') ?: 'radius');
+
+define('CYRAD_DNS_LISTEN_HOST', getenv('CYRAD_DNS_LISTEN_HOST') ?: '0.0.0.0');
+define('CYRAD_DNS_LISTEN_PORT', (int)(getenv('CYRAD_DNS_LISTEN_PORT') ?: 53));
+define('CYRAD_DNS_UPSTREAM',    getenv('CYRAD_DNS_UPSTREAM') ?: '8.8.8.8:53');
+define('CYRAD_DNS_ENFORCE', (int)(getenv('CYRAD_DNS_ENFORCE') !== false ? getenv('CYRAD_DNS_ENFORCE') : 1));
+define('CYRAD_BLOCK_MODE', getenv('CYRAD_BLOCK_MODE') ?: 'page');
+define('CYRAD_WEB_IP', getenv('CYRAD_WEB_IP') ?: '127.0.0.1');
+define('CYRAD_VPN_BLOCK_ENABLED', (int)(getenv('CYRAD_VPN_BLOCK_ENABLED') !== false ? getenv('CYRAD_VPN_BLOCK_ENABLED') : 1));
+// Shared token for router APIs (DNS blocklist sync etc.).
+// Set to a random value and pass the SAME value to openwrt/cyrad-router-setup.sh
+// as API_TOKEN (the VPS-generated bootstrap file already does this).
+define('CYRAD_API_TOKEN', getenv('CYRAD_API_TOKEN') ?: '');
+
+// RADIUS + DAE/DAS (RFC 5176 PoD/CoA): backend -> NAS on UDP/3799.
+// DAS secret must match the 1812/1813 shared secret configured on the NAS.
+define('CYRAD_RADIUS_SECRET', getenv('CYRAD_RADIUS_SECRET') ?: '');
+define('CYRAD_DAS_SECRET',    getenv('CYRAD_DAS_SECRET') ?: (CYRAD_RADIUS_SECRET ?: ''));
+define('CYRAD_DAS_PORT',      (int)(getenv('CYRAD_DAS_PORT') ?: 3799));
+// Optional WireGuard tunnel address of a NATed NAS. Empty = send to nasipaddress.
+define('CYRAD_DAS_TARGET_IP', getenv('CYRAD_DAS_TARGET_IP') ?: '');
+define('CYRAD_RADCLIENT_BIN', getenv('CYRAD_RADCLIENT_BIN') ?: '/usr/bin/radclient');
+define('CYRAD_CLIENTS_CONF',  getenv('CYRAD_CLIENTS_CONF') ?: '/etc/freeradius/3.0/clients.conf');
+
+// Data-cap: rolling 24 h usage window; 24 h ban on breach. The cron lifts the
+// ban at expiry or as soon as the limit is raised/removed.
+define('CYRAD_WINDOW_HOURS', (int)(getenv('CYRAD_WINDOW_HOURS') ?: 24));
+define('CYRAD_BAN_HOURS',    (int)(getenv('CYRAD_BAN_HOURS') ?: 24));
+define('CYRAD_RESET_KICK',   getenv('CYRAD_RESET_KICK') !== false ? (string)getenv('CYRAD_RESET_KICK') : '1');
+
+// ---------------------------------------------------------------------------
+// Optional: Active Directory integration (used by freeradius/setup-ad.sh to
+// seed these; the panel reads them for the "auth source" selector labels and
+// the Add-User "Active Directory" shadow mode). Leave AD_* empty to disable.
+// ---------------------------------------------------------------------------
+define('CYRAD_AD_DOMAIN',   getenv('CYRAD_AD_DOMAIN') ?: '');
+define('CYRAD_AD_HOST',     getenv('CYRAD_AD_HOST') ?: '');
+define('CYRAD_AD_PORT',     (int)(getenv('CYRAD_AD_PORT') ?: 389));
+define('CYRAD_AD_TLS',      (int)(getenv('CYRAD_AD_TLS') ?: 0));
+define('CYRAD_AD_BASE_DN',  getenv('CYRAD_AD_BASE_DN') ?: '');
+define('CYRAD_AD_BIND_DN',  getenv('CYRAD_AD_BIND_DN') ?: '');
+define('CYRAD_AD_BIND_PASS',getenv('CYRAD_AD_BIND_PASS') ?: '');
+
+// ---------------------------------------------------------------------------
+// Optional: Cloudflare Tunnel (freeradius/cloudflared-tunnel.sh). Info only —
+// the tunnel itself is a systemd service, not PHP.
+// ---------------------------------------------------------------------------
+define('CYRAD_CF_TUNNEL_DOMAIN', getenv('CYRAD_CF_TUNNEL_DOMAIN') ?: '');
+define('CYRAD_CF_TUNNEL_HOST',   getenv('CYRAD_CF_TUNNEL_HOST') ?: '');
+define('CYRAD_CF_TUNNEL_BLOCK_HOST', getenv('CYRAD_CF_TUNNEL_BLOCK_HOST') ?: '');

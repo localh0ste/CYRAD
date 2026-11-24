@@ -1,0 +1,26 @@
+[Unit]
+Description=CYRAD DNS Blocker (PHP) — per-org DNS block rules only
+After=network.target mariadb.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/php /var/www/html/dns/dns_monitor.php
+# Bind to port 53 without root:
+#   sudo setcap 'cap_net_bind_service=+ep' $(readlink -f $(which php))
+# or keep it root (default below).
+User=root
+Restart=on-failure
+RestartSec=3
+Environment=CYRAD_DNS_LISTEN_HOST=0.0.0.0
+Environment=CYRAD_DNS_LISTEN_PORT=53
+Environment=CYRAD_DNS_UPSTREAM=8.8.8.8:53
+# DB creds (match config.php)
+Environment=CYRAD_DB_HOST=localhost
+Environment=CYRAD_DB_USER=radius
+Environment=CYRAD_DB_PASS=buggy
+Environment=CYRAD_DB_NAME=radius
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

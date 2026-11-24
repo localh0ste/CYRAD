@@ -1,0 +1,12 @@
+# CYRAD RADIUS 802.1X — NAS (WiFi AP / controller) client definition.
+# The installer writes the AP into the `nas` table for you, so you normally
+# don't need this file. Keep it as a reference or use it for a static client.
+
+client college-ap {
+    ipaddr    = 192.168.1.1     # IP of your WiFi controller / AP
+    secret    = cyradsecret     # RADIUS shared secret — CHANGE THIS
+    shortname = college-ap
+    nas_type  = other
+    # For a subnet of APs, use a CIDR instead:
+    # ipaddr = 192.168.1.0/24
+}
